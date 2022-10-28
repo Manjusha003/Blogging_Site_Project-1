@@ -5,10 +5,16 @@ const mongoose = require("mongoose")
 //----------------------------------------Creating Schema---------------------------------------------
 
 const authorSchema = new mongoose.Schema({
-
-
-    fname: { type: String, required: true },
-    lname: { type: String, required: true },
+    fname: {
+        type: String,
+        required: true,
+        trim:true
+    },
+    lname: {
+        type: String,
+        required: true,
+        trim:true
+    },
     title: {
         type: String,
         enum: ["Mr", "Mrs", "Miss"],
@@ -17,14 +23,16 @@ const authorSchema = new mongoose.Schema({
 
     email: {
         type: String,
-        required : true,
-        unique : true
-       },
+        required: true,
+        unique: true,
+        trim:true
+    },
     password: {
         type: String,
-       
+        trim:true
+
     }
-},{timestamps : true})
+}, { timestamps: true })
 
 // exporting all the model here
 module.exports = mongoose.model('Author', authorSchema)

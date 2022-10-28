@@ -1,53 +1,47 @@
 
 //--------------------importing modules-------------------------------------
+const { isValidObjectId } = require("mongoose");
 const authorModel = require("../model/authorModel");
 const blogsModel = require("../model/blogsModel");
-const { validObjectId, typeValid, isString, isNotEmpty, keysLength, validBoolean } = require('../Validation/validator');
+const { typeValid, isNotEmpty, keysLength, validBoolean, isValid } = require('../Validation/validator');
 
 
 //------------------------ creation of blogs post/blogs----------------------
 const createBlog = async function (req, res) {
     try {
         let blog = req.body;
-        let { title, body, category, subcategory, tag, isPublished } = blog
+        let { title, body, category, subcategory, tag, isPublished, authorId } = blog
         if (!keysLength(blog)) return res.status(400).send({ status: false, msg: "blog details required" });
-        let authorId = req.body.authorId;
 
         // Title validation
         if (!title) return res.status(400).send({ status: false, msg: "title is required" });
-        if (!isString(title)) return res.status(400).send({ msg: "Type of title  must be string" });
-        if (!isNotEmpty(title)) return res.status(400).send({ msg: "title is empty" })
-        title = title.trim();
-
+        if (!isValid(title.trim())) return res.status(400).send({ msg: "Title is not valid" });
 
         // validation of body
         if (!body) return res.status(400).send({ status: false, msg: "body is required" });
-        if (!isString(body)) return res.status(400).send({ status: false, msg: "Type of body must be string" });
-        if (!isNotEmpty(body)) return res.status(400).send({ msg: "body is empty" })
-        body = body.trim();
-
+        if (!isValid(body.trim())) return res.status(400).send({ status: false, msg: "content of the body is invalid" });
 
         //validation of authorId 
         if (!authorId) return res.status(400).send({ status: false, msg: "authorId is required" });
-        authorId = authorId.trim();
-        if (!validObjectId(authorId)) return res.status(400).send({ msg: "authorId is not valid" })
+
+        if (!isValidObjectId(authorId)) return res.status(400).send({ msg: "authorId is not valid" })
 
         //validation of category//
         if (!category) return res.status(400).send({ status: false, msg: "category is required" });
-        if (!isString(category)) return res.status(400).send({ status: false, msg: "Type of category must be string" });
-        if (!isNotEmpty(category)) return res.status(400).send({ msg: "category is empty" })
-        category = category.trim();
+        if (!isValid(category.trim())) return res.status(400).send({ status: false, msg: "category is not valid" });
+
 
         if (Object.keys(blog).some(t => t == "tag")) {
 
             if (!typeValid(tag)) return res.status(400).send({ status: false, msg: "Incorrect type of tags" });
-            if (tag.length == 0) return res.status(400).send({ status: false, msg: "empty" });
+            if (tag.length == 0) return res.status(400).send({ status: false, msg: "tag array is empty" });
 
             for (let i = 0; i < tag.length; i++) {
                 if (typeof tag[i] !== "string") return res.status(400).send({ msg: "Plese enter tags in string format" })
                 if (!isNotEmpty(tag[i])) return res.status(400).send({ msg: "tag is empty" });
             }
-            tag = tag.map(a => a.trim()) //check the type of each tag element
+            blog.tag = tag.map(a => a.trim())
+
         }
 
 
@@ -60,7 +54,7 @@ const createBlog = async function (req, res) {
                 if (typeof subcategory[i] !== "string") return res.status(400).send({ msg: "Plese enter subcategory in string format" })
                 if (!isNotEmpty(subcategory[i])) return res.status(400).send({ msg: "subcategory value is empty" });
             }
-            subcategory = subcategory.map(a => a.trim()) //check the type of each tag element
+            blog.subcategory = subcategory.map(a => a.trim())
         }
 
 
@@ -75,7 +69,7 @@ const createBlog = async function (req, res) {
         let authId = await authorModel.findOne({ _id: authorId });
 
         // check given authId is present in the author document or not
-        if (!authId) return res.status(404).send({ status: false, msg: "authot not found" })
+        if (!authId) return res.status(404).send({ status: false, msg: "author not found" })
 
         const blogCreated = await blogsModel.create(blog);
         return res.status(201).send({ status: true, data: blogCreated });
@@ -94,11 +88,11 @@ const filteredBlogs = async function (req, res) {
         filters.isDeleted = false
         filters.isPublished = true
 
-        //filter.isDeleted= false and filters.isPublished {authorId : kalsjdflkajd, }
+
         if (Object.keys(filters).some(a => a == "authorId")) {
 
             if (!filters.authorId) return res.status(400).send("provide authorid")
-            if (!validObjectId(filters.authorId)) return res.status(400).send({ msg: "authorId is not valid" });
+            if (!isValidObjectId(filters.authorId)) return res.status(400).send({ msg: "authorId is not valid" });
         }
 
 
@@ -127,29 +121,23 @@ const updateBlogs = async function (req, res) {
 
         if (Object.keys(blogData).some(a => a == "title")) {
             if (!title) return res.status(400).send({ status: false, msg: "title is required" });
-            if (!isString(title)) return res.status(400).send({ msg: "Type of title  must be string" });
-            if (!isNotEmpty(title)) return res.status(400).send({ msg: "title is empty" })
-            title = title.trim();
+            if (!isValid(title.trim())) return res.status(400).send({ msg: "Title is not valid" });
+
         }
 
 
         if (Object.keys(blogData).some(a => a == "category")) {
             if (!category) return res.status(400).send({ status: false, msg: "category is required" });
-            if (!isString(category)) return res.status(400).send({ status: false, msg: "Type of category must be string" });
-            if (!isNotEmpty(category)) return res.status(400).send({ msg: "category is empty" })
-            category = category.trim();
+            if (!isValid(category.trim())) return res.status(400).send({ status: false, msg: "category is not valid" });
+
         }
 
-
-
-        if (!blogId) return res.status(400).send({ status: false, msg: "blogId is required" })
-        if (!validObjectId(blogId)) return res.status(400).send({ msg: "blogId is invalid" })
+        if (!isValidObjectId(blogId)) return res.status(400).send({ msg: "blogId is invalid" })
 
         if (Object.keys(blogData).some(a => a == "body")) {
             if (!body) return res.status(400).send({ status: false, msg: "plese provid some data in body" })
-            if (!isString(body)) return res.status(400).send({ status: false, msg: "plese provid data in string" })
-            if (!isNotEmpty(body)) return res.status(400).send({ msg: "body is empty" })
-            body = body.trim();
+            if (!isValid(body.trim())) return res.status(400).send({ status: false, msg: "plese provid data in string" })
+
         }
 
         if (Object.keys(blogData).some(t => t == "tag")) {
@@ -161,10 +149,10 @@ const updateBlogs = async function (req, res) {
                 if (typeof tag[i] !== "string") return res.status(400).send({ msg: "Plese enter tags in string format" })
                 if (!isNotEmpty(tag[i])) return res.status(400).send({ msg: "tag is empty" });
             }
-            tag = tag.map(a => a.trim()) //check the type of each tag element
+            blog.tag = tag.map(a => a.trim())
         }
 
-        
+
         if (Object.keys(blogData).some(t => t == "subcategory")) {
 
             if (!typeValid(subcategory)) return res.status(400).send({ status: false, msg: "Incorrect type of subcategory" });
@@ -174,7 +162,7 @@ const updateBlogs = async function (req, res) {
                 if (typeof subcategory[i] !== "string") return res.status(400).send({ msg: "Plese enter subcategory in string format" })
                 if (!isNotEmpty(subcategory[i])) return res.status(400).send({ msg: "subcategory is empty" });
             }
-            subcategory = subcategory.map(a => a.trim()) //check the type of each tag element
+            blog.subcategory = subcategory.map(a => a.trim())
         }
 
         if (Object.keys(blogData).some(t => t == "isPublished")) {
@@ -206,13 +194,12 @@ const updateBlogs = async function (req, res) {
 //------------------- delete blogs using blogId delete/blogs/:blogId--------------------------------
 const deleteBlogsById = async function (req, res) {
     try {
-        let data = req.params;
-        let Id = data.blogId
+        let blogId = req.params.blogId;
 
-        let blog1 = await blogsModel.findById(Id)
-        if (blog1.isDeleted == true) return res.status(404).send({ status: false, msg: "Blog is alredy deleted" })
+        let findBlog = await blogsModel.findById(blogId)
+        if (findBlog.isDeleted == true) return res.status(404).send({ status: false, msg: "Blog is alredy deleted" })
 
-        let Blog = await blogsModel.findByIdAndUpdate(Id, { $set: { isDeleted: true, deletedAt: new Date() } }, { new: true });
+        let Blog = await blogsModel.findByIdAndUpdate({ blogId: blogId }, { $set: { isDeleted: true, deletedAt: new Date() } }, { new: true });
         if (!Blog) {
             return res.status(404).send({ status: false, msg: "Blog not found" });
 
@@ -228,17 +215,48 @@ const deleteBlogsById = async function (req, res) {
 
 const deleteBlogByQuery = async function (req, res) {
     try {
+        const filters = req.query;
 
-        let ids = req.validBlogId
+        if (Object.keys(filters).length == 0) {
+            return res.status(400).send({ msg: "No documnet is deleted, Please give atlest one filter", status: false })
+        }
+        let blogfilters = { isDeleted: false, isPublished: false }
+        if (filters["authorId"]) {
+            if (!isValidObjectId(filters["authorId"])) {
 
-        let blogs = await blogsModel.find({ _id: { $in: ids } }).updateMany({ isDeleted: true, deleteAt: Date.now() })
+                return res.status(400).send({ msg: "authorId is is invalid", status: false })
+            }
+            blogfilters["authorId"] = filters["authorId"]
+        } else {
+            let decodedToken = req.decodedToken
+            // console.log(decodedToken);
+            let userId1 = decodedToken.userId
+            blogfilters["authorId"] = userId1
+        }
+        if (filters["category"]) {
+            blogfilters["category"] = filters["category"]
+        }
 
-        return res.status(200).send({ status: true, data: blogs })
+        if (filters["tag"]) {
+            blogfilters["tag"] = filters["tag"]
+        }
+        if (filters["subcategory"]) {
+            blogfilters["subcategory"] = filters["subcategory"]
+        }
 
-    } catch (err) {
-        console.log(err)
-        return res.status(500).send({ status: false, msg: err.message })
+        let data = await blogsModel.updateMany(blogfilters, { isDeleted: true, deletedAt: Date.now() },)
+
+        if (data.modifiedCount == 0) {
+            return res.status(404).send({ status: false, msg: "No document found" })
+        }
+
+        res.status(200).send({ status: true, msg: data });
     }
+    catch (error) {
+
+        res.status(500).send({ status: false, msg: error.message });
+    }
+
 }
 
 

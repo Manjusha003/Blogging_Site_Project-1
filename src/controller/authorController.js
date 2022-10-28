@@ -1,56 +1,46 @@
 //--------------------importing modules--------------------
 const authorModel = require('../model/authorModel')
 const jwt = require("jsonwebtoken");
-const { isNotEmpty, isWrong, emaiValid, keysLength, isString, passValid } = require('../Validation/validator')
+const { isValidName, isValidEmail, keysLength, isValidPass } = require('../Validation/validator')
 
 
 //-----------------------------author creation post/authors------------------------------------
 const createAuthor = async function (req, res) {
     try {
         const data = req.body;
-        if (!keysLength(data)) return res.status(400).send({ status :false, msg: "Please provide some data" })
+        if (!keysLength(data)) return res.status(400).send({ status: false, msg: "Please provide some data" })
 
         let { fname, lname, title, email, password } = data;
 
         // fname validation
-        if (!fname) return res.send({status :false, msg: "fname is requried" })
-        if (!isNotEmpty(fname)) return res.status(400).send({status :false, msg: "fname is empty" })
-        data.fname = fname.trim()
-        if (!isWrong(data.fname)) return res.status(400).send({status :false, msg: "fname is not valid" })
+        if (!fname) return res.send({ status: false, msg: "fname is requried" })
+        if (!isValidName(fname.trim())) return res.status(400).send({ status: false, msg: "fname is not valid or empty" })
 
         // lname validation
-        if (!lname) return res.status(400).send({ status :false,msg: "lname is requried" })
-        if (!isNotEmpty(lname)) return res.status(400).send({status :false, msg: "lname is empty" })
-        data.lname = lname.trim()
-        if (!isWrong(data.lname)) return res.status(400).send({status :false, msg: "lname is not valid" })
+        if (!lname) return res.status(400).send({ status: false, msg: "lname is requried" })
+        if (!isValidName(lname.trim())) return res.status(400).send({ status: false, msg: "lname is not valid or empty" })
 
         // title validation
-        if (!title) return res.status(400).send({status :false, msg: "title is requried" })
-        if (!isNotEmpty(title)) return res.status(400).send({status :false, msg: "title is empty" })
+        if (!title) return res.status(400).send({ status: false, msg: "title is requried" })
         data.title = title.trim()
         let arr = ["Mr", "Mrs", "Miss"]
-        if (!arr.includes(data.title)) return res.status(400).send({status :false, msg: "use only Mr, Mrs, Miss" })
+        if (!arr.includes(data.title)) return res.status(400).send({ status: false, msg: "use only Mr, Mrs, Miss" })
 
         // email validation
-        if (!email) return res.status(400).send({status :false,  msg: "email is requried" })
-        if (!isNotEmpty(email)) return res.status(400).send({status :false, msg: "email is empty" })
-        data.email = email.trim()
-        if (!emaiValid(data.email)) return res.status(400).send({status :false, msg: "email is not valid" })
-        const sameEmail = await authorModel.find({email : {$in: email}})
-        if(sameEmail.length !== 0) return res.status(400).send({status :false, msg: "Email is Already Registered" })
+        if (!email) return res.status(400).send({ status: false, msg: "email is requried" })
+        if (!isValidEmail(email.trim())) return res.status(400).send({ status: false, msg: "email is not valid" })
+        const sameEmail = await authorModel.findOne({ email: email })
+        if (sameEmail) return res.status(400).send({ status: false, msg: "Email is Already Registered" })
 
 
         // password validation
-        if (!password) return res.status(400).send({status :false, msg: "password is requried" })
-        if (!isString(password)) return res.status(400).send({status :false, msg: "password not accpeted" })
-        if (!isNotEmpty(password)) return res.status(400).send({status :false, msg: "password is empty" })
-        data.password = password.trim()
-        if (!passValid(data.password)) return res.status(400).send({status :false, msg: "Please enter a valid password" })
+        if (!password) return res.status(400).send({ status: false, msg: "password is requried" })
+        if (!isValidPass(password)) return res.status(400).send({ status: false, msg: "password must contain 1 special character,1 uppercase letter, 1 lowercase letter, 1 number and length must be 8-15" })
 
 
         // author creation
         const author = await authorModel.create(data)
-        res.status(201).send({status :true, msg: "created", data: author })
+        res.status(201).send({ status: true, msg: "created", data: author })
 
 
     } catch (err) {
@@ -81,12 +71,12 @@ const authorLogin = async function (req, res) {
             userId: loggedInAuthor._id.toString(),
             batch: "Project-1",
             organisation: "Blogging site",
-            iat : Math.floor(Date.now() / 1000),
-            exp : Math.floor(Date.now() / 1000) +60*60
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 60 * 60
         },
         "Project-1 Blogging-group-6"
     );
-    res.setHeader("x-auth-token", token);
+    // res.setHeader("x-auth-token", token);
     res.status(200).send({ status: true, data: { token: token } });
 
 }

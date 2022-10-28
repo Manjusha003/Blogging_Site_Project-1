@@ -2,7 +2,8 @@
 
 const blogsModel = require("../model/blogsModel");
 const jwt = require("jsonwebtoken");
-const { validObjectId } = require('../Validation/validator')
+const { isValidObjectId } = require("mongoose");
+
 
 //---------------------------------Authentication-------------------------------------------------------
 
@@ -36,7 +37,7 @@ const authorisation = async function (req, res, next) {
     //find in blog data
 
     if (!Id) return res.status(400).send({ msg: "Please provide blogId" })
-    if (!validObjectId(Id)) return res.status(400).send("blogId is Invalid")
+    if (!isValidObjectId(Id)) return res.status(400).send("blogId is Invalid")
 
     const decodedToken = jwt.verify(token, "Project-1 Blogging-group-6");
     const blog = await blogsModel.findById(Id)
